@@ -1438,6 +1438,22 @@ class TestGlances(unittest.TestCase):
         plugin.plugin_name = 'processlist'
         self.assertIs(plugin.get_conf_value('disable_virtual_memory', convert_bool=True, default=False), False)
 
+    def test_709_conf_list_value_strips_items(self):
+        """Test get_list_value() strips the items around the separator."""
+        print('INFO: [TEST_709] get_list_value strips items')
+        from glances.config import Config
+
+        config = Config()
+        config.parser.read_string(
+            '[outputs]\ncors_origins=http://a.example, http://b.example\nleft_menu=network ,  diskio\n'
+        )
+
+        # "http://a.example, http://b.example" used to give " http://b.example",
+        # which never equals an Origin header.
+        self.assertEqual(config.get_list_value('outputs', 'cors_origins'), ['http://a.example', 'http://b.example'])
+        self.assertEqual(config.get_list_value('outputs', 'left_menu'), ['network', 'diskio'])
+        self.assertIsNone(config.get_list_value('outputs', 'unset_option'))
+
     def test_999_the_end(self):
         """Free all the stats"""
         print('INFO: [TEST_999] Free the stats')

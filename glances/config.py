@@ -384,7 +384,7 @@ class Config:
     def get_list_value(self, section, option, default=None, separator=','):
         """Get the list value of an option, if it exists."""
         try:
-            return self.parser.get(section, option).split(separator)
+            return [item.strip() for item in self.parser.get(section, option).split(separator)]
         except (NoOptionError, NoSectionError):
             return default
 
