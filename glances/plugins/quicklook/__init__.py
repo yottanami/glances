@@ -367,10 +367,11 @@ class QuicklookPlugin(GlancesPluginModel):
         if len(self.stats['percpu']) > self.max_cpu_display:
             if type(data[key]).__name__ == 'Sparkline':
                 sum_other = Sparkline(max_width)
-                # Sparkline display an history
+                # Sparkline display an history of the cores that were not displayed above
+                hidden = {cpu[cpu['key']] for cpu in percpu_list[self.max_cpu_display :]}
                 sum_other.percents = [
-                    sum([i['total'] for i in r[1] if i[i['key']] >= self.max_cpu_display])
-                    / len([i['total'] for i in r[1] if i[i['key']] >= self.max_cpu_display])
+                    sum([i['total'] for i in r[1] if i[i['key']] in hidden])
+                    / len([i['total'] for i in r[1] if i[i['key']] in hidden])
                     for r in raw_cpu
                 ]
                 # A simple padding in order to align metrics to the right

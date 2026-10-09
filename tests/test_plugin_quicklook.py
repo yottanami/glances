@@ -15,6 +15,7 @@ from argparse import Namespace
 import pytest
 
 from glances.config import Config
+from glances.outputs.glances_sparklines import Sparkline
 from glances.plugins.quicklook import QuicklookPlugin
 
 
@@ -163,6 +164,28 @@ class TestQuicklookPercpuDecoration:
         ]
 
         assert decorations == ['CRITICAL', 'OK', 'OK', 'OK']
+
+    def test_the_sparkline_summary_row_averages_the_hidden_cores(self, tmp_path, monkeypatch):
+        """The CPU* sparkline averages the cores that were not drawn, like the bar does.
+
+        Cores 4 and 5 are the busiest, so they are drawn and 2 and 3 are hidden.
+        Picking the history by core number (>= max_cpu_display) averaged 4 and 5
+        instead.
+        """
+        plugin = self._plugin(tmp_path, [10.0, 10.0, 10.0, 10.0, 90.0, 90.0])
+        history = [(0, plugin.stats['percpu'])] * 3
+        monkeypatch.setattr(plugin, 'get_raw_history', lambda item=None, nb=0: history)
+        rows = {}
+
+        def record(msg, data, key, decoration=None):
+            rows[msg] = data.percents
+            return []
+
+        monkeypatch.setattr(plugin, '_msg_create_line', record)
+
+        plugin._msg_per_cpu({'cpu': Sparkline(10)}, 'cpu', 10)
+
+        assert rows['CPU* '][:3] == [10.0, 10.0, 10.0]
 
     def test_scanning_the_cores_does_not_move_the_global_threshold(self, tmp_path):
         """The per-core styles must not be computed with get_alert().
